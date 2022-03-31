@@ -1,10 +1,10 @@
 var PropTypes = require('prop-types');
 
 const Button = (props) => {
-    let {label, Icon, className, ariaText} = props;
+    let {label, Icon, className, ariaText, onClick} = props;
     
     return (
-        <button className={className} aria-label={ariaText}>
+        <button className={className} aria-label={ariaText} onClick={onClick}>
             {label}
             {Icon && <Icon/>}
         </button>

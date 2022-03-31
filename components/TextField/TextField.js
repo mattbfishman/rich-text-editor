@@ -1,12 +1,61 @@
 // var PropTypes = require('prop-types');
 import { FaBold, FaItalic, FaUnderline, FaAlignLeft, FaAlignRight, FaAlignCenter } from "react-icons/fa";
 import Button from "../Button/Button";
-import { includes, findLast } from "lodash";
-import { toLC } from "../../Helpers/string";
+import { includes, findLast, forEach } from "lodash";
 
-const ENTER = 13;
+const ENTER = 13,
+      BOLD  = 'bold';
 
 const TextArea = (props) => {
+    const nextNode = (node) => {
+        if (node.hasChildNodes()) {
+            return node.firstChild;
+        } else {
+            while (node && !node.nextSibling) {
+                node = node.parentNode;
+            }
+            if (!node) {
+                return null;
+            }
+            return node.nextSibling;
+        }
+    }
+    
+    const getRangeSelectedNodes = (range) => {
+        var node = range.startContainer;
+        var endNode = range.endContainer;
+    
+        // Special case for a range that is contained within a single node
+        if (node == endNode) {
+            return [node];
+        }
+    
+        // Iterate nodes until we hit the end container
+        var rangeNodes = [];
+        while (node && node != endNode) {
+            rangeNodes.push( node = nextNode(node) );
+        }
+    
+        // Add partially selected nodes at the start of the range
+        node = range.startContainer;
+        while (node && node != range.commonAncestorContainer) {
+            rangeNodes.unshift(node);
+            node = node.parentNode;
+        }
+    
+        return rangeNodes;
+    }
+    
+    const getRangeElements = () => {
+        if (window.getSelection) {
+            var sel = window.getSelection();
+            if (!sel.isCollapsed) {
+                return getRangeSelectedNodes(sel.getRangeAt(0));
+            }
+        }
+        return [];
+    }
+
     const findParent = (node) => {
         var loop = true;
         while(loop){
@@ -29,7 +78,7 @@ const TextArea = (props) => {
             node = findParent(anchor),
             newNode = document.createElement('p');
             
-            newNode.className ='sw-full h-4 mt-3 mb-2';
+            newNode.innerHTML = '&nbsp;'
 
         if(node && node.nextSibling){
             node.parentNode.insertBefore(newNode, node.nextSibling);
@@ -51,9 +100,22 @@ const TextArea = (props) => {
         }
     }
 
+    const handleButtonClick = (e, type) => {
+        e.preventDefault();
+        var ele = getRangeElements();
+        forEach(ele, function(element){
+            if(element && element.nodeName !== 'P'){
+                let bold = document.createElement('strong');
+                let parent = element.parentNode;
+                bold.appendChild(element);
+                parent.appendChild(bold);
+            }
+        });
+    }
+
     return (
         <div className="p-2 h-[100px] w-[400px]">
-            <TextMenu/>
+            <TextMenu onClick={handleButtonClick}/>
             <div 
                 className="text-editor border focus:outline-blue-500 w-full min-h-[200px] p-2"
                 contentEditable="true"
@@ -75,9 +137,10 @@ const TextArea = (props) => {
 // }
 
 const TextMenu = (props) => {
+    let {onClick} = props;
     return (
         <div className="w-full border border-b-0 p-2 bg-gray-100">
-            <Button className="capitalize text-black shadow-xs text-sm px-3 py-2 font-semibold hover:bg-gray-300 ml-2" Icon={FaBold} ariaText='bold'/>
+            <Button className="capitalize text-black shadow-xs text-sm px-3 py-2 font-semibold hover:bg-gray-300 ml-2" Icon={FaBold} ariaText={BOLD} onClick={(e) => onClick(e, BOLD)}/>
             <Button className="capitalize text-black shadow-xs text-sm px-3 py-2 font-semibold hover:bg-gray-300" Icon={FaItalic} ariaText='italize'/>
             <Button className="capitalize text-black shadow-xs text-sm px-3 py-2 font-semibold hover:bg-gray-300" Icon={FaUnderline} ariaText='underline'/>
             <Button className="capitalize text-black shadow-xs text-sm px-3 py-2 font-semibold hover:bg-gray-300" Icon={FaAlignLeft} ariaText='align left'/>
